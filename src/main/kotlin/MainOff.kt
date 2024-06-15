@@ -18,7 +18,7 @@ fun generateBitcoinKeyPair(): Pair<String, String> {
     val ecKey = ECKey()
 
     // Получаем приватный ключ в формате WIF
-    val privateKeyWIF = ecKey.getPrivateKeyAsWiF(networkParameters) // кошелек Electrum
+    val privateKeyWIF = ecKey.getPrivateKeyAsWiF(networkParameters)
 
     // Получаем публичный ключ в формате биткоин-адреса
     val bitcoinAddress = Address.fromKey(networkParameters, ecKey, ScriptType.P2PKH).toString()
@@ -29,14 +29,13 @@ fun generateBitcoinKeyPair(): Pair<String, String> {
 fun worker(id: Int, outputFile: String, btcAddresses: Map<String, Double>, lock: ReentrantLock) {
     while (true) {
         val (privateKey, publicAddress) = generateBitcoinKeyPair()
-        print("\r (${long.incrementAndGet()}) Publicaddress: $publicAddress Privatekey: $privateKey ")
+        print("\r Publicaddress: $publicAddress Privatekey: $privateKey ")
 
         if(btcAddresses.containsKey(publicAddress)){
-            println("($id) Match Found! Privatekey: $privateKey Publicaddress: $publicAddress Balance: ${btcAddresses.get(publicAddress)}")
-            println("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+            println("\n ($id) Match Found! Privatekey: $privateKey Publicaddress: $publicAddress Balance: ${btcAddresses.get(publicAddress)}")
             lock.lock()
             try {
-                File(outputFile).appendText("$privateKey:$publicAddress\n")
+                File(outputFile).appendText("$privateKey:$publicAddress:${btcAddresses.get(publicAddress)}\n")
             } finally {
                 lock.unlock()
             }
