@@ -1,62 +1,34 @@
-import org.bitcoinj.core.Base58
-import org.bouncycastle.crypto.digests.RIPEMD160Digest
-import org.bouncycastle.jce.ECNamedCurveTable
-import org.bouncycastle.jce.interfaces.ECPrivateKey
-import org.bouncycastle.jce.interfaces.ECPublicKey
-import org.bouncycastle.jce.provider.BouncyCastleProvider
-import org.bouncycastle.util.encoders.Hex
+import org.bitcoinj.core.Address
+import org.bitcoinj.core.ECKey
+import org.bitcoinj.core.NetworkParameters
+import org.bitcoinj.params.MainNetParams
+import org.bitcoinj.script.Script.ScriptType
 import java.io.File
-import java.security.KeyPairGenerator
-import java.security.MessageDigest
-import java.security.SecureRandom
-import java.security.Security
-import java.security.spec.ECGenParameterSpec
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.locks.ReentrantLock
 
 val  long: AtomicLong = AtomicLong();
 
-fun generateKeyAndAddress(): Pair<String, String> {
-    Security.addProvider(BouncyCastleProvider())
-    val ecSpec = ECNamedCurveTable.getParameterSpec("P-256")
-    val g = KeyPairGenerator.getInstance("ECDSA", "BC")
-    g.initialize(ECGenParameterSpec("P-256"), SecureRandom())
+fun generateBitcoinKeyPair(): Pair<String, String> {
+    // Используем MainNetParams для основного сетевого параметра
+    val networkParameters: NetworkParameters = MainNetParams.get()
 
-    val pair = g.generateKeyPair()
-    val privateKey = pair.private as ECPrivateKey
-    val publicKey = pair.public as ECPublicKey
+    // Генерируем новый ECKey
+    val ecKey = ECKey()
 
-    val publicKeyBytes = publicKey.q.getEncoded(false).copyOfRange(1, 65)
-    val address = publicKeyToAddress(publicKeyBytes)
+    // Получаем приватный ключ в формате WIF
+    val privateKeyWIF = ecKey.getPrivateKeyAsWiF(networkParameters)
 
-    return Pair(Hex.toHexString(privateKey.d.toByteArray()), address)
-}
+    // Получаем публичный ключ в формате биткоин-адреса
+    val bitcoinAddress = Address.fromKey(networkParameters, ecKey, ScriptType.P2PKH).toString()
 
-fun publicKeyToAddress(publicKeyBytes: ByteArray): String {
-    val sha256 = MessageDigest.getInstance("SHA-256").digest(publicKeyBytes)
-    val ripemd160 = RIPEMD160Digest()
-    ripemd160.update(sha256, 0, sha256.size)
-    val ripemd160Result = ByteArray(ripemd160.digestSize)
-    ripemd160.doFinal(ripemd160Result, 0)
-
-    val networkVersion = byteArrayOf(0x00)
-    val addressBytes = networkVersion + ripemd160Result
-    val checksum = sha256Checksum(addressBytes)
-    val fullAddress = addressBytes + checksum
-
-    return Base58.encode(fullAddress)
-}
-
-fun sha256Checksum(input: ByteArray): ByteArray {
-    val firstSHA = MessageDigest.getInstance("SHA-256").digest(input)
-    val secondSHA = MessageDigest.getInstance("SHA-256").digest(firstSHA)
-    return secondSHA.copyOfRange(0, 4)
+    return Pair(privateKeyWIF, bitcoinAddress)
 }
 
 fun worker(id: Int, outputFile: String, btcAddresses: Map<String, Double>, lock: ReentrantLock) {
     while (true) {
-        val (privateKey, publicAddress) = generateKeyAndAddress()
+        val (privateKey, publicAddress) = generateBitcoinKeyPair()
         print("\r (${long.incrementAndGet()}) Publicaddress: $publicAddress Privatekey: $privateKey ")
 
         if(btcAddresses.containsKey(publicAddress)){
