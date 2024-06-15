@@ -18,7 +18,7 @@ fun generateBitcoinKeyPair(): Pair<String, String> {
     val ecKey = ECKey()
 
     // Получаем приватный ключ в формате WIF
-    val privateKeyWIF = ecKey.getPrivateKeyAsWiF(networkParameters)
+    val privateKeyWIF = ecKey.getPrivateKeyAsWiF(networkParameters) // кошелек Electrum
 
     // Получаем публичный ключ в формате биткоин-адреса
     val bitcoinAddress = Address.fromKey(networkParameters, ecKey, ScriptType.P2PKH).toString()
