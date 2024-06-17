@@ -10,7 +10,7 @@ repositories {
 }
 
 dependencies {
-   implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.17.1")
+    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.17.1")
     implementation("org.bouncycastle:bcprov-jdk15on:1.68")
     implementation("org.bitcoinj:bitcoinj-core:0.15.10")
     implementation("com.google.code.gson:gson:2.8.8")
